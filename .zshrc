@@ -2,10 +2,14 @@
 export ZSH="$HOME/.oh-my-zsh"
 
 # Tema de Oh My Zsh
-ZSH_THEME="robbyrussell"
+ZSH_THEME="fino"
 
 # Plugins de Oh My Zsh
-plugins=(git)
+plugins=(
+    git
+    zsh-autosuggestions
+    zsh-syntax-highlighting
+)
 
 # Cargar Oh My Zsh
 source $ZSH/oh-my-zsh.sh
