@@ -9,28 +9,46 @@ plugins=(
     git
     zsh-autosuggestions
     zsh-syntax-highlighting
+    macos
+    brew
+    node
+    npm
 )
 
 # Cargar Oh My Zsh
 source $ZSH/oh-my-zsh.sh
 
-# ===== CONFIGURACIÓN DE PATH =====
+# ===== CONFIGURACIÓN DE PATH Y VARIABLES DE ENTORNO =====
 
 # Homebrew (gestor de paquetes)
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # Android SDK
-export PATH="$PATH:/Users/macrohex/Library/Android/sdk/platform-tools"
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$PATH:$ANDROID_HOME/platform-tools"
+export PATH="$PATH:$ANDROID_HOME/emulator"
+export PATH="$PATH:$ANDROID_HOME/tools"
+export PATH="$PATH:$ANDROID_HOME/tools/bin"
+export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
 
 # Toolbox de JetBrains
-export PATH="$PATH:/Users/macrohex/Library/Application Support/JetBrains/Toolbox/scripts"
+export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 
 # PNPM (gestor de paquetes Node.js)
-export PNPM_HOME="/Users/macrohex/Library/pnpm"
-export PATH="$PNPM_HOME:$PATH"
+export PNPM_HOME="$HOME/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+# Flutter
+export PATH="$HOME/develop/flutter/bin:$PATH"
 
 # OpenJDK (Java)
 export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+
+# Console Ninja
+export PATH="$HOME/.console-ninja/.bin:$PATH"
 
 # ===== CONFIGURACIÓN DE NVM =====
 
@@ -38,3 +56,125 @@ export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # Carga nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # Carga autocompletado de nvm
+
+# ===== CONFIGURACIÓN DE RBENV =====
+
+# Ruby Version Manager
+eval "$(rbenv init -)"
+
+# ===== CONFIGURACIÓN DE CONDA/MINIFORGE =====
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/opt/homebrew/Caskroom/miniforge/base/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/opt/homebrew/Caskroom/miniforge/base/etc/profile.d/conda.sh" ]; then
+        . "/opt/homebrew/Caskroom/miniforge/base/etc/profile.d/conda.sh"
+    else
+        export PATH="/opt/homebrew/Caskroom/miniforge/base/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+
+# ===== CONFIGURACIONES ESPECÍFICAS PARA macOS =====
+
+# --- OpenMP (libomp) fix para PyTorch/torchvision en macOS ---
+# Detecta si es Apple Silicon (arm64) o Intel y setea la ruta adecuada.
+if [[ "$(uname -m)" == "arm64" ]]; then
+  # Apple Silicon (M1/M2/M3/M4)
+  if [ -d "/opt/homebrew/opt/libomp/lib" ]; then
+    export DYLD_LIBRARY_PATH="/opt/homebrew/opt/libomp/lib:${DYLD_LIBRARY_PATH}"
+  fi
+else
+  # Intel
+  if [ -d "/usr/local/opt/libomp/lib" ]; then
+    export DYLD_LIBRARY_PATH="/usr/local/opt/libomp/lib:${DYLD_LIBRARY_PATH}"
+  fi
+fi
+
+# (Opcional) Evitar variables de workaround inseguras:
+unset KMP_DUPLICATE_LIB_OK 2>/dev/null || true
+# --- fin OpenMP fix ---
+
+# ===== ALIASES Y FUNCIONES ÚTILES =====
+
+# Navegación
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+alias ~="cd ~"
+alias -- -="cd -"
+
+# Listados
+alias ll="ls -la"
+alias la="ls -A"
+alias l="ls -CF"
+alias ls="ls -G"  # Colorized output
+
+# LSD con iconos (si está instalado)
+if command -v lsd &> /dev/null; then
+    alias ls="lsd"
+    alias ll="lsd -la"
+    alias la="lsd -A"
+    alias l="lsd -l"
+    alias lt="lsd --tree"
+fi
+
+# Git
+alias gs="git status"
+alias ga="git add"
+alias gc="git commit"
+alias gp="git push"
+alias gl="git log --oneline --graph --decorate"
+alias gd="git diff"
+alias gco="git checkout"
+alias gb="git branch"
+
+# Desarollo
+alias pn="pnpm"
+alias nr="npm run"
+alias ni="npm install"
+alias nrd="npm run dev"
+alias nrs="npm run start"
+alias nrb="npm run build"
+
+# Sistema
+alias zshrc="code ~/.zshrc"
+alias szsh="source ~/.zshrc"
+alias brews="brew list"
+alias update-all="brew update && brew upgrade && brew cleanup"
+
+# Seguridad para rm
+alias rm="rm -i"
+alias cp="cp -i"
+alias mv="mv -i"
+
+# ===== CONFIGURACIONES ADICIONALES =====
+
+# Variables de entorno locales
+if [ -f "$HOME/.local/bin/env" ]; then
+    . "$HOME/.local/bin/env"
+fi
+
+# Configuración de history
+export HISTSIZE=10000
+export SAVEHIST=10000
+export HISTFILE=~/.zsh_history
+
+# Mejorar autocompletado
+autoload -Uz compinit && compinit
+
+# Configuración de tiempo de ZSH
+export UPDATE_ZSH_DAYS=7
+
+# Habilitar corrección de comandos
+ENABLE_CORRECTION="true"
+
+# Mostrar red dots mientras se espera completado
+COMPLETION_WAITING_DOTS="true"
+
+# Deshabilitar marcar archivos no rastreados como sucios (mejora performance en repos grandes)
+DISABLE_UNTRACKED_FILES_DIRTY="true"
